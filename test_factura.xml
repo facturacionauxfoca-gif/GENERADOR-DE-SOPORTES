@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+    <cbc:ID>SETT90001234</cbc:ID>
+    <cbc:IssueDate>2026-06-26</cbc:IssueDate>
+    
+    <!-- Línea 1: UBM Ojo Derecho -->
+    <cac:InvoiceLine>
+        <cbc:ID>1</cbc:ID>
+        <cbc:InvoicedQuantity>1</cbc:InvoicedQuantity>
+        <cac:Item>
+            <cbc:Description>951304 - ULTRABIOMICROSCOPIA OCULAR (UBM) - PACIENTE: JUAN CARLOS VELEZ CC 98765432 - ORDEN: 400192</cbc:Description>
+            <cac:SellersItemIdentification>
+                <cbc:ID>951304</cbc:ID>
+            </cac:SellersItemIdentification>
+        </cac:Item>
+    </cac:InvoiceLine>
+
+    <!-- Línea 2: UBM Ojo Izquierdo (Bilateralidad) -->
+    <cac:InvoiceLine>
+        <cbc:ID>2</cbc:ID>
+        <cbc:InvoicedQuantity>1</cbc:InvoicedQuantity>
+        <cac:Item>
+            <cbc:Description>951304 - ULTRABIOMICROSCOPIA OCULAR (UBM) - PACIENTE: JUAN CARLOS VELEZ CC 98765432 - ORDEN: 400192</cbc:Description>
+            <cac:SellersItemIdentification>
+                <cbc:ID>951304</cbc:ID>
+            </cac:SellersItemIdentification>
+        </cac:Item>
+    </cac:InvoiceLine>
+
+    <!-- Línea 3: Ecografía Ocular (Multi-estudio bajo la misma orden) -->
+    <cac:InvoiceLine>
+        <cbc:ID>3</cbc:ID>
+        <cbc:InvoicedQuantity>1</cbc:InvoicedQuantity>
+        <cac:Item>
+            <cbc:Description>951302 - ECOGRAFIA OCULAR MODO A/B - PACIENTE: JUAN CARLOS VELEZ CC 98765432 - ORDEN: 400192</cbc:Description>
+            <cac:SellersItemIdentification>
+                <cbc:ID>951302</cbc:ID>
+            </cac:SellersItemIdentification>
+        </cac:Item>
+    </cac:InvoiceLine>
+
+    <!-- Línea 4: Paquimetría (Otro paciente) -->
+    <cac:InvoiceLine>
+        <cbc:ID>4</cbc:ID>
+        <cbc:InvoicedQuantity>1</cbc:InvoicedQuantity>
+        <cac:Item>
+            <cbc:Description>952501 - PAQUIMETRIA - PACIENTE: CLAUDIA PATRICIA AMARIS CC 55221100 - ORDEN: 400195</cbc:Description>
+            <cac:SellersItemIdentification>
+                <cbc:ID>952501</cbc:ID>
+            </cac:SellersItemIdentification>
+        </cac:Item>
+    </cac:InvoiceLine>
+</Invoice>

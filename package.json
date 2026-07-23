@@ -1,0 +1,8 @@
+{
+  "name": "generador-soportes",
+  "version": "1.0.0",
+  "description": "Generador de Soportes Clínicos con Firmas Sincronizadas",
+  "dependencies": {
+    "@vercel/kv": "^1.0.1"
+  }
+}

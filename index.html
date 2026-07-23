@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Masivo de Soportes</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="main-layout">
+        <!-- Sidebar: Signature Management -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <i data-lucide="pen-tool" class="sidebar-icon"></i>
+                <h2>Firmas Autorizadas</h2>
+            </header>
+            
+            <div class="signature-manager">
+                <p class="sidebar-description">Sube y gestiona las firmas que se rotarán automáticamente.</p>
+                
+                <div id="signatureGallery" class="signature-gallery sidebar-gallery">
+                    <!-- Signatures rendered here -->
+                </div>
+                
+                <div class="signature-actions">
+                    <button id="btnAddSignature" class="btn btn-secondary btn-full">
+                        <i data-lucide="plus"></i> Añadir Firma
+                    </button>
+                    <input type="file" id="signatureInput" accept="image/png, image/jpeg" hidden>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-container" style="position: relative;">
+            <!-- Developer Signature (Top Right) -->
+            <div style="position: absolute; top: 20px; right: 30px; display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); padding: 0.4rem 1rem; border-radius: 20px; color: #cbd5e1; font-size: 0.85rem; border: 1px solid rgba(255, 255, 255, 0.05); z-index: 50;">
+                <i data-lucide="code-2" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+                <span>Desarrollado por <strong style="color: #f8fafc; font-weight: 600;">Neider Diaz</strong></span>
+            </div>
+            
+            <header class="app-header">
+                <div class="logo-container">
+                    <i data-lucide="layers" class="logo-icon"></i>
+                    <h1>Generador de Soportes</h1>
+                </div>
+                <p class="subtitle">Automatiza la creación de documentos diagnósticos</p>
+                
+                <div class="razon-social-selector" style="margin-top: 1rem; display: flex; gap: 1.5rem; justify-content: center; background: rgba(15, 23, 42, 0.4); padding: 0.5rem 1.5rem; border-radius: 20px; border: 1px solid var(--card-border); width: fit-content; margin-left: auto; margin-right: auto;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 500;">
+                        <input type="radio" name="razonSocial" value="foca" checked style="accent-color: var(--primary); transform: scale(1.2);">
+                        <span>FOCA</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 500;">
+                        <input type="radio" name="razonSocial" value="clinica" style="accent-color: var(--primary); transform: scale(1.2);">
+                        <span>CLÍNICA VIU</span>
+                    </label>
+                </div>
+            </header>
+
+            <div class="app-tabs">
+                <button class="tab-btn active" data-target="soportesView"><i data-lucide="file-check"></i> Soportes Clínicos</button>
+                <button class="tab-btn" data-target="cotizacionesView"><i data-lucide="calculator"></i> Cotizaciones</button>
+                <button class="tab-btn" data-target="facturasView"><i data-lucide="file-text"></i> Soportes por Factura</button>
+            </div>
+
+            <div class="workflow-container" id="soportesView">
+                <!-- Step 1: Select Study -->
+                <section class="card step-card active" id="step-1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h2>Seleccionar Estudio</h2>
+                    </div>
+                    <div class="card-content">
+                        <p>Elige el tipo de soporte para cargar la plantilla.</p>
+                        <div class="custom-select-wrapper">
+                            <select id="studySelect" class="custom-select">
+                                <option value="" disabled selected>Selecciona un estudio...</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="select-icon"></i>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 2: Upload Excel -->
+                <section class="card step-card disabled" id="step-2">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h2>Cargar Datos (Excel)</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="requirements-box" id="requirementsBox" style="display: none;">
+                            <h3><i data-lucide="info"></i> Columnas Requeridas</h3>
+                            <ul id="requiredColumnsList" class="columns-list"></ul>
+                            <button id="btnDownloadSample" class="btn btn-secondary">
+                                <i data-lucide="download"></i> Plantilla Excel
+                            </button>
+                        </div>
+
+                        <div class="upload-zone" id="uploadZone">
+                            <input type="file" id="fileInput" accept=".xlsx, .xls" hidden>
+                            <i data-lucide="upload-cloud" class="upload-icon"></i>
+                            <h3>Sube tu archivo Excel</h3>
+                            <p>Arrastra o haz clic aquí</p>
+                        </div>
+
+                        <div id="filePreview" class="file-preview" style="display: none;">
+                            <div class="file-info">
+                                <i data-lucide="file-spreadsheet" class="file-icon"></i>
+                                <span id="fileName">archivo.xlsx</span>
+                                <span id="fileRows" class="badge">0 registros</span>
+                            </div>
+                            <button id="btnRemoveFile" class="icon-btn" title="Quitar archivo"><i data-lucide="x"></i></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 3: Generate -->
+                <section class="card step-card disabled" id="step-3">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h2>Generación Masiva</h2>
+                    </div>
+                    <div class="card-content text-center">
+                        <p>Genera y descarga tus PDFs comprimidos o unificados.</p>
+                        
+                        <!-- Selector de Formato (Solo para Lentes) -->
+                        <div id="outputFormatContainer" class="output-format-selector" style="display: none;">
+                            <label>¿Cómo quieres descargar tus soportes?</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" data-value="zip">
+                                    <i data-lucide="folder-archive"></i> Individuales (ZIP)
+                                </button>
+                                <button type="button" class="toggle-btn" data-value="unified">
+                                    <i data-lucide="file-text"></i> Unificado (PDF)
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button id="btnGenerate" class="btn btn-primary btn-large disabled">
+                            <i data-lucide="zap"></i> Generar Soportes
+                        </button>
+
+                        <div id="progressContainer" class="progress-container" style="display: none;">
+                            <div class="progress-info">
+                                <span id="progressText">Procesando 0 / 0</span>
+                                <span id="progressPercentage">0%</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressBar"></div>
+                            </div>
+                        </div>
+                        
+                        <div id="successMessage" class="success-message" style="display: none;">
+                            <i data-lucide="check-circle" class="success-icon"></i>
+                            <p>¡Generación completada!</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Facturas View -->
+            <div class="workflow-container" id="facturasView" style="display: none;">
+                <!-- Step 1: Upload Invoice -->
+                <section class="card step-card active" id="step-factura-1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h2>Cargar Factura Electrónica (XML o PDF)</h2>
+                    </div>
+                    <div class="card-content">
+                        <p>Sube el archivo XML de la factura electrónica (UBL 2.1) o el archivo PDF de la factura para extraer la información de los exámenes automáticamente.</p>
+                        <div class="upload-zone" id="uploadZoneFactura">
+                            <input type="file" id="fileInputFactura" accept=".xml, .pdf" multiple hidden>
+                            <i data-lucide="file-text" class="upload-icon" style="color: var(--primary);"></i>
+                            <h3>Sube tu factura XML o PDF</h3>
+                            <p>Arrastra o haz clic aquí</p>
+                        </div>
+                        <div id="filePreviewFactura" class="file-preview" style="display: none;">
+                            <div class="file-info">
+                                <i data-lucide="file-check-2" class="file-icon" style="color: var(--success);"></i>
+                                <span id="fileNameFactura">factura.xml</span>
+                                <span id="fileSizeFactura" class="badge">0 KB</span>
+                            </div>
+                            <button id="btnRemoveFileFactura" class="icon-btn" title="Quitar factura"><i data-lucide="x"></i></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 2: Preview & Consolidation -->
+                <section class="card step-card disabled" id="step-factura-2">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h2>Resultados del Procesamiento (Bilateralidad Aplicada)</h2>
+                    </div>
+                    <div class="card-content">
+                        <p id="facturaSummaryText">No hay datos procesados.</p>
+                        
+                        <div class="table-container" style="max-height: 400px; overflow-y: auto; overflow-x: auto; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--card-border); margin-top: 1rem;">
+                            <table id="tableFacturaEstudios" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--card-border); background: rgba(15, 23, 42, 0.6);">
+                                        <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">Paciente</th>
+                                        <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">Fecha</th>
+                                        <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">Estudio / CUP</th>
+                                        <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">N° OS</th>
+                                        <th style="padding: 10px; font-weight: 600; color: var(--text-muted); text-align: center; width: 110px;">Lateralidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyFacturaEstudios">
+                                    <tr id="emptyRowFactura">
+                                        <td colspan="5" style="padding: 15px; text-align: center; color: var(--text-muted); font-style: italic;">No se han procesado estudios de factura.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 3: Massive PDF Generation -->
+                <section class="card step-card disabled" id="step-factura-3">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h2>Generación de Soportes</h2>
+                    </div>
+                    <div class="card-content text-center">
+                        <p>Genera todos los soportes clínicos unificados en base a los datos extraídos de la factura.</p>
+                        
+                        <button id="btnGenerateFactura" class="btn btn-primary btn-large disabled">
+                            <i data-lucide="zap"></i> Generar Soportes Clínicos
+                        </button>
+
+                        <div id="progressContainerFactura" class="progress-container" style="display: none;">
+                            <div class="progress-info">
+                                <span id="progressTextFactura">Procesando 0 / 0</span>
+                                <span id="progressPercentageFactura">0%</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressBarFactura"></div>
+                            </div>
+                        </div>
+                        
+                        <div id="successMessageFactura" class="success-message" style="display: none;">
+                            <i data-lucide="check-circle" class="success-icon"></i>
+                            <p>¡Soportes de factura generados con éxito!</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Cotizaciones View -->
+            <div class="workflow-container" id="cotizacionesView" style="display: none; max-width: 800px; margin: 0 auto;">
+                <section class="card step-card active">
+                    <div class="step-header">
+                        <i data-lucide="file-plus" style="color: var(--primary); margin-right: 10px;"></i>
+                        <h2>Crear Nueva Cotización</h2>
+                    </div>
+                    <div class="card-content">
+                        <form id="formCotizacion" class="cotizacion-form">
+                            <!-- Fecha automática (Oculta en UI, se genera en JS) -->
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="cotNombre">Nombre del Paciente:</label>
+                                    <input type="text" id="cotNombre" placeholder="Ej. Juan Pérez" required>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="cotID">Identificación (ID):</label>
+                                    <input type="text" id="cotID" placeholder="Ej. 12345678" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cotEPS">Entidad / EPS:</label>
+                                <div class="custom-select-wrapper">
+                                    <input type="text" id="cotEPS" class="custom-select" list="epsList" placeholder="Escribe para buscar o selecciona una EPS..." required autocomplete="off">
+                                                                        <datalist id="epsList">
+                                        <option value="A.R.L. SURA"></option>
+                                        <option value="A.R.P. AGRICOLA DE SEGUROS"></option>
+                                        <option value="A.R.P. COLMENA"></option>
+                                        <option value="A.R.P. SEGUROS BOLIVAR"></option>
+                                        <option value="A.R.S. HUMANA VIVIR"></option>
+                                        <option value="ACEROS CORTADOS S.A."></option>
+                                        <option value="ACESCO   SAS"></option>
+                                        <option value="ADVANTI S.A.S"></option>
+                                        <option value="ALIANSALUD E.P.S"></option>
+                                        <option value="ALIANSALUD E.P.S. (EVENTOS)"></option>
+                                        <option value="ALLERGAN DE COLOMBIA SA"></option>
+                                        <option value="ALLIANZ SEGUROS DE VIDA S.A"></option>
+                                        <option value="ALMACEN Y TALLER TORNIACCESORIOS"></option>
+                                        <option value="ALMACENES EXITO"></option>
+                                        <option value="ANDREC CORPORATION S.A."></option>
+                                        <option value="APPLUS NORCONTROL COLOMBIA LTDA"></option>
+                                        <option value="ARMADA NACIONAL ESM 1034"></option>
+                                        <option value="ASOCIACION COLEGIO CRISTIANO J VENDER MURPHY"></option>
+                                        <option value="ASOCIACION INDIGENA DEL CAUCA  AIC EPS-I"></option>
+                                        <option value="ASOCIACION MUTUAL SER EMPRESA SOLIDARIA DE SALUD EPS-S"></option>
+                                        <option value="AUDIOSALUD INTEGRAL LTDA"></option>
+                                        <option value="AXA COLPATRIA"></option>
+                                        <option value="AXA COLPATRIA  MEDICINA PREPAGADA"></option>
+                                        <option value="AXA COLPATRIA SEGUROS DE VIDA S.A."></option>
+                                        <option value="AZURA OPHTALMICS"></option>
+                                        <option value="BAVARIA  CIA S.C.A"></option>
+                                        <option value="BAYER S.A"></option>
+                                        <option value="BIENESTAR I.P.S. LTDA"></option>
+                                        <option value="BIENESTAR IPS S.A.S."></option>
+                                        <option value="BIENESTAR UNIVERSITARIO UNIATLANTICO"></option>
+                                        <option value="BIOFTALM LTDA"></option>
+                                        <option value="BIONEXO"></option>
+                                        <option value="BIOTECH HEALTHCARE HOLDING GMBH"></option>
+                                        <option value="BRAVO TRANS SAS"></option>
+                                        <option value="BUSINESS TRADE GROUP SAS"></option>
+                                        <option value="C.I. LA SAMARIA S.A.S."></option>
+                                        <option value="CAFESALUD ENTIDAD PROMOTORA  DE SALUD"></option>
+                                        <option value="CAFESALUD ENTIDAD.PROM.SALUD-CAPITACION"></option>
+                                        <option value="CAJA DE COMPENSACION FAMILIAR CAJACOPI A"></option>
+                                        <option value="CAJA DE COMPENSACION FAMILIAR DE SUCRE"></option>
+                                        <option value="CAJA DE COMPENSACIÓN FAMILIAR COMPENSAR"></option>
+                                        <option value="CAJACOPI EPS S.A.S"></option>
+                                        <option value="CAMARA DE COMERCIO"></option>
+                                        <option value="CARDIF COLOMBIA SEGUROS S.A"></option>
+                                        <option value="CARTON DE COLOMBIA SMURFIT"></option>
+                                        <option value="CECAM BIENESTAR"></option>
+                                        <option value="CEDEC"></option>
+                                        <option value="CELTA S.A.S."></option>
+                                        <option value="CENTRALCO LTDA"></option>
+                                        <option value="CENTRO CIRUGIA AMBULATORIA"></option>
+                                        <option value="CENTRO CIRUGIA OCULAR"></option>
+                                        <option value="CENTRO DE ESPECIALIDADES PEDIATRICAS DEL CESAR &quot;PAIDEIA&quot; SAS"></option>
+                                        <option value="CENTRO DE FORMACION INTEGRAL MAHANAIN"></option>
+                                        <option value="CENTRO DE INVESTIGACION MEDICO ASISTENCIAL SAS"></option>
+                                        <option value="CENTRO DE OFTALMOLOGIA INTEGRAL COFIN S.A.S"></option>
+                                        <option value="CENTRO OPTICO DE LA COSTA S.A.S."></option>
+                                        <option value="CENTRO TERAPEUTICO RE-ENCONTRARSE S.A.S"></option>
+                                        <option value="CENTROS HOSPITALARIOS DEL CARIBE S.A.S"></option>
+                                        <option value="CERVECERÍA DEL VALLE S.A"></option>
+                                        <option value="CESAR SALGADO GARCIA"></option>
+                                        <option value="CHILDREN INTERNATIONAL COLOMBIA"></option>
+                                        <option value="CLINICA ATENAS"></option>
+                                        <option value="CLINICA BENEDICTO S.A"></option>
+                                        <option value="CLINICA COLSANITAS S.A."></option>
+                                        <option value="CLINICA DE FRACTURAS"></option>
+                                        <option value="CLINICA DE LA COSTA LTDA."></option>
+                                        <option value="CLINICA DE LA MUJER S.A"></option>
+                                        <option value="CLINICA DE LA VISION OAB LTDA"></option>
+                                        <option value="CLINICA DEL CARIBE S.A."></option>
+                                        <option value="CLINICA GENERAL DEL NORTE  S.A.S"></option>
+                                        <option value="CLINICA INTEGRAL LA ESPERANZA S.A.S."></option>
+                                        <option value="CLINICA JALLER S.A.S."></option>
+                                        <option value="CLINICA LA ASUNCION"></option>
+                                        <option value="CLINICA LA MERCED I.P.S"></option>
+                                        <option value="CLINICA LA MILAGROSA S.A."></option>
+                                        <option value="CLINICA NUEVA CAMPBELL"></option>
+                                        <option value="CLINICA OFTALMOLOGICA DE SINCELEJO LTDA"></option>
+                                        <option value="CLINICA OFTALMOLOGICA DE SUCRE"></option>
+                                        <option value="CLINICA OFTALMOLOGICA DE VALLEDUPAR"></option>
+                                        <option value="CLINICA PORTOAZUL S.A."></option>
+                                        <option value="CLINICA REINA CATALINA SAS"></option>
+                                        <option value="CLINICA SAN MARTIN"></option>
+                                        <option value="CLINICA SAN RAFAEL ALTA COMPLEJIDAD S.A.S."></option>
+                                        <option value="CLINICA SAN VICENTE"></option>
+                                        <option value="CLINICA SANTA ANA DE DIOS S.A.S"></option>
+                                        <option value="CLINICA VALLEDUPAR LTDA"></option>
+                                        <option value="CLUB DE LEONES BARRANQUILLA MONARCA"></option>
+                                        <option value="CLUB DEPORTIVO POPULAR JUNIOR F.C. S.A"></option>
+                                        <option value="COCHLEAR COLOMBIA SAS"></option>
+                                        <option value="CODILENTES COLOMBIA S.A."></option>
+                                        <option value="COLMEDICA MED. PREPAGADA"></option>
+                                        <option value="COLMENA A.R.P"></option>
+                                        <option value="COLPATRIA E.P.S."></option>
+                                        <option value="COLSALUD  S.A"></option>
+                                        <option value="COLSANITAS"></option>
+                                        <option value="COM  BARRANQUILLA"></option>
+                                        <option value="COMFACOR A.R.S."></option>
+                                        <option value="COMFAGUAJIRA EPS-S"></option>
+                                        <option value="COMFAMILIAR DEL ATLCO."></option>
+                                        <option value="COMITE PARALIMPICO COLOMBIANO"></option>
+                                        <option value="COMPARTA EPS-S"></option>
+                                        <option value="COMPAÑIA DE SEGUROS COLSANITAS S.A."></option>
+                                        <option value="COMPAÑIA MUNDIAL DE SEGUROS S.A."></option>
+                                        <option value="COOMEVA - SANTA MARTA -"></option>
+                                        <option value="COOMEVA E.P.S (SAN VICENTE)"></option>
+                                        <option value="COOMEVA E.P.S.  S.A."></option>
+                                        <option value="COOMEVA E.P.S. (MURILLO)"></option>
+                                        <option value="COOMEVA MEDICINA PREPAGADA S.A."></option>
+                                        <option value="COOPERATIVA DE TRABAJADORES ENERGETICOS"></option>
+                                        <option value="COOPERATIVA MULTIACTIVA DEL SECTOR ENERGETICO COOTRAELECTRA"></option>
+                                        <option value="COOSALUD ENTIDAD PROMOTORA DE SALUD S.A"></option>
+                                        <option value="COOSALUD EPS"></option>
+                                        <option value="COOTRASENA COOPERATIVA MULTIACTIVA DE TRABAJADORES DEL SENA"></option>
+                                        <option value="COOTRATEL"></option>
+                                        <option value="CORPORACIÓN ACCIÓN POR EL ATLANTICO ACTU"></option>
+                                        <option value="CUPON VIDA S.A.S."></option>
+                                        <option value="CURE LATAM SAS"></option>
+                                        <option value="D.T.SALUD S.A.S."></option>
+                                        <option value="DEPARTAMENTO DE POLICIA DE LA GUAJIRA"></option>
+                                        <option value="DEXCO S.A.S"></option>
+                                        <option value="DISPENSARIO MEDICO NIVEL II BARRANQUILLA"></option>
+                                        <option value="DOW AGROSCIENCES DE COLOMBIA"></option>
+                                        <option value="DROGUERIA AMERICANA S.A DE CV"></option>
+                                        <option value="DUSAKAWI E.P.S I"></option>
+                                        <option value="E.P.S Y MED PREP SURAMERICANA"></option>
+                                        <option value="E.P.S.Y MED PREP. SURAMERICANA-EVENTOS"></option>
+                                        <option value="ECOPETROL  S. A."></option>
+                                        <option value="EDGARDO MAURICIO DIAZ BORELLY"></option>
+                                        <option value="EJERCITO NACIONAL ESM 1015"></option>
+                                        <option value="EL HERALDO"></option>
+                                        <option value="ELECTRIFICADORA DEL CARIBE S.A. E.S.P"></option>
+                                        <option value="EMPRESA MULTIACTIVA DE SALUD SERMULTISALUD S.A.S."></option>
+                                        <option value="EMPRESA PROMOTORA DE SALUD ECOOPSOS EPS S.A.S."></option>
+                                        <option value="ENTIDAD PROMOTORA DE SALUD SANITAS S.A.S"></option>
+                                        <option value="EPS FAMILIAR DE COLOMBIA S.A.S."></option>
+                                        <option value="EPS FAMISANAR S.A.S"></option>
+                                        <option value="EPS-S AMBUQ E.S.S."></option>
+                                        <option value="EPSI ANAS WAYUU"></option>
+                                        <option value="EQUIDAD SEGUROS DE VIDA A.R.P."></option>
+                                        <option value="EQUIOFTALMOS LTDA"></option>
+                                        <option value="ESM BATALLÓN DE ASPC NO 2 &quot;CACIQUE ALFONSO XEQUE&quot; (NIVEL I)"></option>
+                                        <option value="ESPECIALIDADES OFTALMOLOGICAS S.A"></option>
+                                        <option value="EUROPEAN DREDGING COMPANY SUCURSAL COLOMBIA"></option>
+                                        <option value="EVOLUCIA SAS"></option>
+                                        <option value="EXTREME TECHNOLOGIES S.A."></option>
+                                        <option value="EYE SURGICAL TECNOLOGY LTDA"></option>
+                                        <option value="EYEFLOW INC"></option>
+                                        <option value="FEDERACION HANDICAP INTERNATIONAL"></option>
+                                        <option value="FERNANDO GARCIA MOYANO"></option>
+                                        <option value="FIDEICOMISO FONDO NACIONAL DE SALUD"></option>
+                                        <option value="FIDEICOMISOS PATRIMONIOS AUTONOMOS FIDUCIARIA LA PREVISORA"></option>
+                                        <option value="FINOTEX S.A."></option>
+                                        <option value="FINSOCIAL S.A.S"></option>
+                                        <option value="FISA"></option>
+                                        <option value="FONDEATLAN"></option>
+                                        <option value="FONDO DE EMPLEADOS ALMACENES EXITO"></option>
+                                        <option value="FONDO DE EMPLEADOS AV VILLAS FEVI"></option>
+                                        <option value="FONDO DE EMPLEADOS CAMARA DE COMERCIO FECAMARA"></option>
+                                        <option value="FONDO DE EMPLEADOS DE INTERCOR FONDECOR"></option>
+                                        <option value="FONDO DE EMPLEADOS DE PIZANO"></option>
+                                        <option value="FONDO DE EMPLEADOS DE PROCAPS"></option>
+                                        <option value="FONDO DE EMPLEADOS DEL CERREJON"></option>
+                                        <option value="FONDO DE EMPLEADOS DEL DEPARTAMENTO DEL ATLANTICO FONDEATLAN"></option>
+                                        <option value="FONDO DE EMPLEADOS DEL GRUPO COREMAR"></option>
+                                        <option value="FONDO DE EMPLEADOS DEL GRUPO EMPRESARIAL INASSA"></option>
+                                        <option value="FONDO EMPLEADOS FEPIMSA"></option>
+                                        <option value="FONLITOPLAS"></option>
+                                        <option value="FORTREA INC."></option>
+                                        <option value="FREXEN"></option>
+                                        <option value="FUERZA AEREA CACOM3"></option>
+                                        <option value="FUNCOLEHF"></option>
+                                        <option value="FUNDACION  UNIVERSIDAD DEL NORTE"></option>
+                                        <option value="FUNDACION  VALDERRAMA"></option>
+                                        <option value="FUNDACION CENTRA DE VIDA INTEGRAL"></option>
+                                        <option value="FUNDACION COLOMBIA SUBSIDIAR"></option>
+                                        <option value="FUNDACION DEL CARIBE PARA LA INVESTIGACION BIOMEDICA"></option>
+                                        <option value="FUNDACION GRUPO FAMILIA"></option>
+                                        <option value="FUNDACION HUELLAS"></option>
+                                        <option value="FUNDACION INTEGRAL DE SALUD Y EDUCACION PARA LA REINTEGRACIN"></option>
+                                        <option value="FUNDACION MARIA ELENA RESTREPO - FUNDAVÉ"></option>
+                                        <option value="FUNDACION MEDICO PREVENTIVA -VALLEDUPAR-"></option>
+                                        <option value="FUNDACION MEDICO PREVENTIVA PARA EL BIEN"></option>
+                                        <option value="FUNDACION NU3"></option>
+                                        <option value="FUNDACION OFTALMOLOGICA DEL CARIBE"></option>
+                                        <option value="FUNDACION OFTALMOLOGICA DEL CARIBE-STAMT"></option>
+                                        <option value="FUNDACION OPERACION SONRISA COLOMBIA"></option>
+                                        <option value="FUNDACION POLICLINICA CIENAGA"></option>
+                                        <option value="FUNDACION PREMATUROS SIN FRONTERAS"></option>
+                                        <option value="FUNDACION PROCIENCIAS"></option>
+                                        <option value="FUNDACION RENACER"></option>
+                                        <option value="FUNDACION SONREIR"></option>
+                                        <option value="FUTBOL CON CORAZÓN"></option>
+                                        <option value="ForSight VISION6 Inc"></option>
+                                        <option value="GALEANO BECERRA ANA OLIVA"></option>
+                                        <option value="GALENOS CASTROS PACHECO S.A.S"></option>
+                                        <option value="GASES DEL CARIBE"></option>
+                                        <option value="GLOBAL SUPPLIES SOLUTIONS S.A.S."></option>
+                                        <option value="GRUPO VIVIR BARRANQUILLA SAS"></option>
+                                        <option value="GUERRA Y GUERRA  SAS"></option>
+                                        <option value="GUSOR LTDA"></option>
+                                        <option value="H.V. INGENIERIA Y CONSTRUCCIONES S.A.S."></option>
+                                        <option value="HDI  SEGUROS COLOMBIA S.A"></option>
+                                        <option value="HERMANAS  DOMINICAS DE LA PRESENTACION"></option>
+                                        <option value="IGLESIA CENTRO BIBLICO INTERNACIONAL"></option>
+                                        <option value="IMH ASSETS CORP"></option>
+                                        <option value="INC RESEARCH COLOMBIA LTDA"></option>
+                                        <option value="INDUSTRIA METALICA COLOMBIANA SAS"></option>
+                                        <option value="INDUSTRIAS NACIONAL DE GASEOSAS"></option>
+                                        <option value="INSTITUTO EDUCATIVO DISTRITAL MADRE MARCELINA"></option>
+                                        <option value="INSTITUTO ONCOHEMATOLOGICO BETANIA"></option>
+                                        <option value="INSTITUTO SALVADOREÑO DEL SEGURO SOCIAL"></option>
+                                        <option value="INTERNATIONAL BERCKLEY SCHOOL S.A.S."></option>
+                                        <option value="INVERSIONES CHAHIN"></option>
+                                        <option value="INVERTECNOLOGICAS"></option>
+                                        <option value="IQVIA RDS COLOMBIA SAS"></option>
+                                        <option value="IQVIA RDS INC"></option>
+                                        <option value="ISTAR Medical S.A."></option>
+                                        <option value="IVANTIS"></option>
+                                        <option value="JAASIEL SAS"></option>
+                                        <option value="JAG INGENIERIA & REFRIGERACION S.A.S."></option>
+                                        <option value="JOHNSON  JOHNSON VISION"></option>
+                                        <option value="JOHNSON & JOHNSON"></option>
+                                        <option value="JOSE CARLOS LORA MARTINLEYES - OFTALMOLOGO"></option>
+                                        <option value="KAIKA S.A.S"></option>
+                                        <option value="KGP CONSULTORIAS & LOGISTICAS S.A.S"></option>
+                                        <option value="LABORATORIO OFTALMICO DE LA COSTA SAS"></option>
+                                        <option value="LABORATORIOS ALCON DE COLOMBIA S.A."></option>
+                                        <option value="LABORATORIOS OFTALMICOS"></option>
+                                        <option value="LABORATORIOS RETINA  S.A.S."></option>
+                                        <option value="LABORATORIOS SOPHIA DE COLOMBIA LTDA"></option>
+                                        <option value="LAFAM S.A.S."></option>
+                                        <option value="LEASING BANCOLOMBIA S.A"></option>
+                                        <option value="LEASING CORFICOLOMBIANA SA CF"></option>
+                                        <option value="LENTECH S.A."></option>
+                                        <option value="LIBERTY SEGUROS  S.A"></option>
+                                        <option value="LUIS GUILLERMO VASQUEZ VELEZ"></option>
+                                        <option value="LUZ MARINA MELO SANMIGUEL"></option>
+                                        <option value="MAPFRE COLOMBIA VIDA SEGUROS"></option>
+                                        <option value="MAPFRE SEGUROS GENERALES DE COLOMBIA S.A."></option>
+                                        <option value="MEDICINA ALTA COMPLEJIDAD MACSA"></option>
+                                        <option value="MEDICSANAR IPS"></option>
+                                        <option value="MEDIMAS EPS SAS"></option>
+                                        <option value="MEDISANITAS S.A.S"></option>
+                                        <option value="MEDPLUS MEDICINA PREPAGADA S.A."></option>
+                                        <option value="METLIFE COLOMBIA SEGUROS DE VIDA S.A (AL"></option>
+                                        <option value="MSD (MERCK SHARP & DOHME COLOMBIA SAS)"></option>
+                                        <option value="MUNDIAL SEGUROS"></option>
+                                        <option value="MUNICIPIO DE SABANALARGA ATLANTICO"></option>
+                                        <option value="MUSICAR S.A"></option>
+                                        <option value="NETCARE"></option>
+                                        <option value="NETCARE PARTICULARES"></option>
+                                        <option value="NOVARTIS DE COLOMBIA"></option>
+                                        <option value="NUEVA E.P.S."></option>
+                                        <option value="NUEVA EPS S.A. (CAPITACION)"></option>
+                                        <option value="OFTALMODIAGNOSTICO S.A.S"></option>
+                                        <option value="OFTALMOLOGOS ASOCIADOS DE LA COSTA"></option>
+                                        <option value="OFTAMAR LTDA"></option>
+                                        <option value="OINSAMED SAS"></option>
+                                        <option value="OPERACIONES GENERALES SURAMERICANA S.A.S."></option>
+                                        <option value="OPIMED SAS"></option>
+                                        <option value="OPTHA"></option>
+                                        <option value="OPTICA PANORAMA"></option>
+                                        <option value="ORGANIZACION CLINICA BONNADONA PREVENIR"></option>
+                                        <option value="PAN AMERICAN LIFE DE COLOMBIA COMPAÑIA DE SEGUROS SA"></option>
+                                        <option value="PANAMERICAN INSTRUMENTS LTDA"></option>
+                                        <option value="PARTICULAR EXCEDENTE COFCA"></option>
+                                        <option value="PARTICULAR EXCEDENTES"></option>
+                                        <option value="PARTICULARES"></option>
+                                        <option value="PARTICULARES COFCA"></option>
+                                        <option value="PARTICULARES EGLE"></option>
+                                        <option value="PARTICULARES FOCA"></option>
+                                        <option value="PARTICULARES FOTOCOPIAS"></option>
+                                        <option value="PARTICULARES OPTICA SANTA MARTA"></option>
+                                        <option value="PARTIICULARES FOCA SANTA MARTA"></option>
+                                        <option value="PEREZ RADIOLOGOS & CIA LTDA"></option>
+                                        <option value="PEREZ RADIOLOGOS S.A.S"></option>
+                                        <option value="PERFECT BODY MEDICAL CENTER LTDA"></option>
+                                        <option value="POLICIA METROPOLITANA DE SANTA MARTA"></option>
+                                        <option value="POLICIA NACIONAL DE COLOMBIA"></option>
+                                        <option value="POLICIA NACIONAL SECCIONAL DE SANIDAD"></option>
+                                        <option value="PORTMAGDALENA S.A"></option>
+                                        <option value="POSITIVA COMPAÑIA DE SEGUROS S.A"></option>
+                                        <option value="PREMEDIC COLOMBIA"></option>
+                                        <option value="PREVENIR 1-A S.A."></option>
+                                        <option value="PREVISORA - SOAT"></option>
+                                        <option value="PRIME TERMOFLORES S.A.S. E.S.P."></option>
+                                        <option value="PROBIENESTAR"></option>
+                                        <option value="PROCAPS"></option>
+                                        <option value="PRODUCTOS ROCHE S.A."></option>
+                                        <option value="PROGRESALUD"></option>
+                                        <option value="PROMOTORES DEL CARIBE SAS"></option>
+                                        <option value="PRUEBA CLINICA OFTAL DE CALI"></option>
+                                        <option value="PUNTO SALUD I.P.S"></option>
+                                        <option value="QBE SEGUROS SA"></option>
+                                        <option value="QUIMIOSALUD S.A.S."></option>
+                                        <option value="QUINTAL S.A"></option>
+                                        <option value="RED SALUD EPS"></option>
+                                        <option value="REDYPLAN CDI SAS"></option>
+                                        <option value="REGIONAL DE ASEGURAMIENTO EN SALUD N°8"></option>
+                                        <option value="ROCOL S.A."></option>
+                                        <option value="ROHM AND HAAS COLOMBIA LTDA"></option>
+                                        <option value="SABORES LTDA"></option>
+                                        <option value="SALUD AL DIA I.P.S"></option>
+                                        <option value="SALUD COLPATRIA"></option>
+                                        <option value="SALUD GRUPAL IPS"></option>
+                                        <option value="SALUD TOTAL"></option>
+                                        <option value="SALUDCOOP E.P.S."></option>
+                                        <option value="SALUDVIDA EPS"></option>
+                                        <option value="SANAMED MEDICINA ESPECIALIZADA S.A.S."></option>
+                                        <option value="SCANDINAVIA PHARMA LTDA"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTAL"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTAL BOLIVAR"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTAL CESAR"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTAL CORDOBA"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTO  GUAJIRA"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTO MAGDALENA"></option>
+                                        <option value="SECRETARIA DE SALUD DEPARTAMENTO SUCRE"></option>
+                                        <option value="SECRETARIA DE SALUD DISTRITAL DE BARRANQ"></option>
+                                        <option value="SEGUROS BOLIVAR"></option>
+                                        <option value="SEGUROS COLPATRIA S.A."></option>
+                                        <option value="SEGUROS DE VIDA ALFA S.A VIDALFA S.A"></option>
+                                        <option value="SEGUROS DE VIDA SURAMERICANA SA"></option>
+                                        <option value="SEGUROS DEL ESTADO S.A"></option>
+                                        <option value="SEGUROS GENERALES SURAMERICANA S.A"></option>
+                                        <option value="SENSES CONSULTORIOS IPS S.A.S."></option>
+                                        <option value="SERVICIO NACIONAL DE APREDIZAJE SENA"></option>
+                                        <option value="SERVICIOS INTEGRALES EN ENTIDADES DE SALUD S.A.S"></option>
+                                        <option value="SERVIPROTECCION S.A.S."></option>
+                                        <option value="SINERGIA GLOBAL EN SALUD S.A.S."></option>
+                                        <option value="SOCIEDAD DE CIRUGIA OCULAR CARIBE S.A.S"></option>
+                                        <option value="SOCIEDAD MEDICA CLINICA MAICAO"></option>
+                                        <option value="SOCIEDAD MEDICA DE SANTA MARTA S.A.S"></option>
+                                        <option value="SOCIEDAD MEDICA LTDA (CLINICA RIOHACHA)"></option>
+                                        <option value="SUMIMEDICAL S.A.S"></option>
+                                        <option value="SUPEREFECTIVO S.A."></option>
+                                        <option value="SYNEOS HEALTH, LLC"></option>
+                                        <option value="TE OIGO, CENTRO AUDIOLOGICO S.A.S."></option>
+                                        <option value="TECNI-SLOT S.A.S."></option>
+                                        <option value="TECNOQUIMICAS S.A"></option>
+                                        <option value="TERMOBARRANQUILLA - TEBSA"></option>
+                                        <option value="TFS Trial Form Support, International"></option>
+                                        <option value="TRABAJOS TECNICOS DE COLOMBIA LTDA"></option>
+                                        <option value="TRINITY PARTNERS, LLC"></option>
+                                        <option value="TRIPLE A.A.A."></option>
+                                        <option value="UNIDAD DE CUIDADOS INTENSIVOS RENACER LT"></option>
+                                        <option value="UNIDAD DE SALUD DE LA UNIVERSIDAD DEL ATLANTICO"></option>
+                                        <option value="UNION TEMPORAL  VIVA 1A ARMADA"></option>
+                                        <option value="UNION TEMPORAL NORSALUD PPL"></option>
+                                        <option value="UNION TEMPORAL OFTALMOLOGOS ASOCIADOS"></option>
+                                        <option value="UNION TEMPORAL OFTAMAR"></option>
+                                        <option value="UNION TEMPORAL SALUD INTEGRAL MAISFEN"></option>
+                                        <option value="UNION TEMPORAL UT RED INTEGRADA FOSCAL-CUB"></option>
+                                        <option value="UNIVERSIDAD DEL ATLANTICO"></option>
+                                        <option value="UNIVERSIDAD NACIONAL DE COLOMBIA"></option>
+                                        <option value="US MEDICAL SOLUTIONS"></option>
+                                        <option value="UT COFCA-OTOCEN"></option>
+                                        <option value="VISION & HEALTH LAB S.A.S"></option>
+                                        <option value="VIVIR S.A MEDICINA PREPAGADA"></option>
+                                        <option value="VYGON COLOMBIA S.A."></option>
+                                        <option value="WASSER CHEMICAL S.A.S"></option>
+                                        <option value="ZONA FRANCA CELSIA S.A.  E.S.P."></option>
+                                    </datalist>
+                                    <i data-lucide="search" class="select-icon"></i>
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin-top: 1.5rem; color: var(--text-main); font-size: 1.05rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="plus-circle" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                                Agregar Servicio a Cotizar
+                            </h3>
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="cotServicioCodigo">Código:</label>
+                                    <input type="text" id="cotServicioCodigo" list="listaCodigos" placeholder="Ej. 5018001">
+                                    <datalist id="listaCodigos"></datalist>
+                                </div>
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="cotServicioNombre">Descripción:</label>
+                                    <input type="text" id="cotServicioNombre" list="listaNombres" placeholder="Ej. CONSULTA DE RINOLOGIA">
+                                    <datalist id="listaNombres"></datalist>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="cotServicioValor">Valor ($):</label>
+                                    <input type="number" id="cotServicioValor" placeholder="120000">
+                                </div>
+                                <div class="form-group" style="flex: 0.5; justify-content: flex-end; padding-bottom: 2px;">
+                                    <button type="button" id="btnAddServicio" class="btn btn-secondary" style="height: 42px; width: 100%;">
+                                        <i data-lucide="plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabla de Servicios Agregados -->
+                            <div class="servicios-agregados-wrapper" style="margin-top: 1.5rem;">
+                                <h3 style="color: var(--text-main); font-size: 1.05rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="shopping-cart" style="width: 18px; height: 18px; color: var(--success);"></i>
+                                    Detalle de Servicios
+                                </h3>
+                                <div class="table-container" style="overflow-x: auto; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--card-border);">
+                                    <table id="tableServiciosCotizados" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid var(--card-border); background: rgba(15, 23, 42, 0.6); text-align: left;">
+                                                <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">Código</th>
+                                                <th style="padding: 10px; font-weight: 600; color: var(--text-muted);">Descripción</th>
+                                                <th style="padding: 10px; font-weight: 600; color: var(--text-muted); text-align: right;">Valor</th>
+                                                <th style="padding: 10px; font-weight: 600; color: var(--text-muted); text-align: center; width: 60px;">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyServiciosCotizados">
+                                            <!-- Filas agregadas dinámicamente -->
+                                            <tr id="emptyRow">
+                                                <td colspan="4" style="padding: 15px; text-align: center; color: var(--text-muted); font-style: italic;">No se han agregado servicios a esta cotización.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Campos Adicionales y Resumen -->
+                            <div class="form-row" style="margin-top: 1.5rem; align-items: flex-start;">
+                                <div class="form-group" style="flex: 1.5; gap: 1rem;">
+                                    <div class="form-group">
+                                        <label for="cotObservaciones">Observaciones:</label>
+                                        <textarea id="cotObservaciones" rows="3" placeholder="Ej. Notas de la cotización, vigencia de 30 días, etc." style="padding: 0.8rem 1rem; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text-main); font-size: 0.95rem; outline: none; transition: border-color 0.2s; resize: vertical; font-family: inherit;"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group" style="flex: 1; background: rgba(15, 23, 42, 0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--card-border); font-size: 0.95rem;">
+                                    <h4 style="margin-bottom: 0.8rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem; color: var(--text-main);">Resumen</h4>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 0.8rem; font-weight: 600; font-size: 1.1rem; color: var(--primary);">
+                                        <span>Total:</span>
+                                        <span id="resTotal">$ 0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" id="btnGenerarCotizacion" class="btn btn-primary btn-large" style="margin-top: 1.5rem; width: 100%;">
+                                <i data-lucide="printer"></i> Generar Cotización en PDF
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="logo.js?v=1"></script>
+    <script src="logo_clinica.js?v=2"></script>
+    <script src="firmaNeider.js?v=1"></script>
+    <script src="firmaIngrid.js?v=1"></script>
+    <script src="serviciosData.js?v=2"></script>
+    <script src="app.js?v=3"></script>
+</body>
+</html>
